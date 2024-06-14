@@ -1,4 +1,1 @@
-@echo off
-call myvenv/Scripts/activate
-@pause
-python main.py
+python -m venv venv
