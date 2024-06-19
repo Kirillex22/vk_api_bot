@@ -35,7 +35,7 @@ def main():
     intce = Instance(am, names, gen)
 
     window = Tk()
-    window.title("Auto-answerer for vk.com")
+    window.title("ChatBot for vk.com")
     window.geometry("800x600")
 
     frame = Frame(
@@ -47,68 +47,75 @@ def main():
 
     cal_btn = Button(
         frame, 
-        text='Запуск',
+        text='Execute',
         command=intce.start
     )
     cal_btn.grid(row=5, column=2)
 
     stop_btn = Button(
         frame, 
-        text='Остановка для выбранного чата',
+        text='Terminate for this person',
         command=intce.stop
     )
     stop_btn.grid(row=6, column=2)
 
     stop_all_btn = Button(
         frame, 
-        text='Полная остановка',
+        text='Terminate for all',
         command=intce.stop_all
     )
     stop_all_btn.grid(row=7, column=2)
 
     dump_btn = Button(
         frame, 
-        text='Дамп диалога',
+        text='Dialog dump',
         command=intce.dump_dialog
     )
     dump_btn.grid(row=8, column=2)
 
     load_model_btn = Button(
         frame, 
-        text='Обучить или загрузить модель',
+        text='Fit model',
         command=intce.fit_model
     )
     load_model_btn.grid(row=9, column=2)
 
     pred_mode_btn = Button(
         frame, 
-        text='Режим готовой модели',
-        command=intce.predicting_mode
+        text='Load model',
+        command=intce.load_model
     )
     pred_mode_btn.grid(row=10, column=2)
 
+    exit_btn = Button(
+        frame, 
+        text='Exit',
+        command=window.destroy
+    )
+    exit_btn.grid(row=12, column=1)
+
     method_lbl = Label(
         frame,
-        text="Выбрать текущую цель"
+        text="Set current target"
     )
     method_lbl.grid(row=1, column=1)
 
     method_lb2 = Label(
         frame,
-        text="Размер дампа диалога (в сообщениях)"
+        text="Choose dump size"
     )
     method_lb2.grid(row=3, column=1)
 
     combobox = Combobox(frame, values=names, width=30, state="readonly")
     combobox.grid(row=2, column=1)
-    combobox.set('Выбор цели')
+    combobox.set('Available targets')
     combobox.bind("<<ComboboxSelected>>", intce.selected)
     intce.combobox = combobox
 
 
     combobox1 = Combobox(frame, values=counts, width=30, state="readonly")
     combobox1.grid(row=4, column=1)
-    combobox1.set('Выбор размера дампа')
+    combobox1.set('Available sizes')
     combobox1.bind("<<ComboboxSelected>>", intce.set_count_of_messages)
     intce.combobox1 = combobox1
 

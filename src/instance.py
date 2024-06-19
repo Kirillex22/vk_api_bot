@@ -1,10 +1,12 @@
 from tkinter.ttk import Combobox 
 from src.account_manager import AccountManager
 from src.answer_generator import AnswerGenerator
+from src.fitter import Fitter
 
 class Instance:
     def __init__(self, am : AccountManager, targets : list, ans_gen):
         self.am = am
+        self.ftr = Fitter()
         self.targets = targets
         self.current_target = None
         self.combobox = None
@@ -23,7 +25,7 @@ class Instance:
 
     def dump_dialog(self):
         self.am.getDialogAsJson(self.current_target, self.count_of_messages)
-        print(f'DUMPED {self.current_target} [{self.count_of_messages}] MESSAGES')
+        print(f'SUCCESFUL DUMPED {self.current_target} [{self.count_of_messages}] MESSAGES')
 
     
     def stop_all(self):
@@ -36,19 +38,17 @@ class Instance:
 
 
     def fit_model(self):
-        self.ans_gen.current_mode = 'fitting-predicting'
-        print(f'SETTED FIT-PRED MODE FOR {self.current_target}')
-        self.ans_gen.fit(self.current_target)
-        print(f'FITTED {self.current_target}')
+        self.fitter.fit(self.current_target)
+        print(f'FITTED AND SAVED MODEL FOR {self.current_target}')
 
 
-    def predicting_mode(self):
-        self.ans_gen.current_mode = 'predicting'
-        print(f'SETTED PREDICTING MODE FOR {self.current_target}')
+    def load_model(self):
+        self.ans_gen.load_model(self.current_target)
+        print(f'LOADED MODEL FOR {self.current_target}')
 
 
     def set_count_of_messages(self, event):
         self.count_of_messages = int(self.combobox1.get())
-        print(f'SELECTED {self.count_of_messages} AS COUNT')
+        print(f'SELECTED {self.count_of_messages} AS COUNT OF MESSAGES TO DUMP')
 
         

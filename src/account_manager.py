@@ -4,11 +4,12 @@ import random
 import threading
 import pprint
 import json
+import numpy as np
 
 
 class AccountManager:
 
-    def __init__(self, targets: dict, token: str, vk_id: str):
+    def __init__(self, targets: dict, token: str, vk_id: str, reaction_probability = 0.85):
         self.targets = targets
         self.token = token
         self.vk_id = vk_id
@@ -16,6 +17,16 @@ class AccountManager:
         self.api = None
         self.handlers = {}
         self.activities = ["typing", "audiomessage", "photo", "videomessage"]
+        self.reaction_probability = reaction_probability
+
+        if reaction_probability <= 0: 
+            self.reaction_arange = np.array([1]) 
+        else: 
+            self.reaction_arange = np.arange(0, int(1/reaction_probability), 1)
+
+
+    def __random_value_gen(self) -> bool:
+        return random.choice(self.reaction_arange) == 0
 
 
     def logger(self):
@@ -32,7 +43,7 @@ class AccountManager:
 
             if(int(msg['from_id']) == int(self.vk_id)): break
 
-            if random.randint(0, 2) == 0:
+            if self.__random_value_gen():
                 self.sendReaction(user_name, msg['conversation_message_id'])
 
             corpus.append(msg["text"])
