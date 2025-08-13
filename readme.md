@@ -1,14 +1,71 @@
-# vk_api_bot
+## Описание приложения
+
+Это десктопное приложение для взаимодействия с **VK** (ВКонтакте), предназначенное для автоматизации общения с выбранными пользователями и анализа диалогов. Основные возможности:
+
+1. **Выбор цели для общения**
+
+   * Пользователь указывает цель (контакт в VK) из заранее подготовленного списка.
+   * Приложение может вести диалог с этим контактом автоматически.
+
+2. **Автоматическая имитация сообщений**
+
+   * Бот может отвечать как «Цель имитации», имитируя стиль общения выбранного пользователя.
+   * Возможны различные режимы: сарказм, холодное общение, имитация естественного диалога.
+
+3. **Дамп диалогов**
+
+   * Можно выгружать последние сообщения из диалогов в файл для анализа.
+   * Пользователь выбирает, сколько сообщений выгружать.
+
+4. **Управление ботом**
+
+   * Запуск общения с выбранной целью.
+   * Остановка общения с одной целью или со всеми сразу.
+
+5. **Конфигурация**
+
+   * Все цели и настройки хранятся в `config.yaml`.
+   * Можно указать VK API токен и ID пользователя.
+
+6. **Интерфейс**
+
+   * Простое графическое окно на **Tkinter**.
+   * Возможность выбрать цель и количество сообщений через выпадающие списки.
+   * Кнопки для запуска, остановки, дампа и выхода из приложения.
+
+## Инструкция по запуску
+
+1. Перейдите в папку **`data`**.
+
+2. Вставьте ваши цели в файл **`targets.json`** в формате:
+
+   ```json
+   "имя": "vk_id"
+   ```
+
+3. Откройте файл `сonfig.example.yaml`, предварительно или после переименовав его в `config.yaml`.
+
+4. Вставьте ваш VK API токен:
+
+   * Для этого перейдите на [https://vkhost.github.io/](https://vkhost.github.io/)
+   * Нажмите на **vk.com**, согласитесь с условиями
+   * Скопируйте текст после `access_token=...` и до `&expires` из адресной строки
+
+5. Вставьте ваш **VK ID** в `сonfig.yaml`.
+6. Вставьте ваш токен для Sber GigaChat в `сonfig.yaml`
+
+7. Создайте виртуальное окружение (venv), активируйте его и выполните
+```shell
+pip install -r requirements/dev.txt
+```
+8. Запустите с помощь **`python main.py`**:
+
+   * Выберите цель и нажмите **Dump**, дождитесь, затем **Execute**.
+   * Этот процесс можно повторять для разных целей.
+   * Чтобы остановить бота, нажмите **Terminate for this person**.
+   * Чтобы остановить всех ботов - нажмите **Terminate for all**.
+
+
+
+
  
-Chatbot for a personal page vk.com to automatically generate replies to messages
-***
-## Opportunities
-- Сhoosing profiles vk.com to start the process of scanning incoming messages and subsequent response
-- The possibility of automatic labeling of reactions with a specified probability of their occurrence
-- The ability to respond solely with reactions
-- The ability to train a machine learning model based on a dialog to generate answers
-***
-## What is necessary to start using?
-- Fill in the data/targets.json file (if missing, create) profiles of the right people in the format [name convenient for you: vk_id] (in the future it will be automated)
-- Get a personal vk api access token and place it in the .env file (visit https://vkhost.github.io/, choose vk.com, follow instructions)
-- Put your own vk id in the .env file (it is necessary to distinguish your messages from others')

@@ -1,130 +1,95 @@
-import random 
-import tkinter as tk
-from tkinter import * 
-from tkinter import messagebox
-import asyncio
-from tkinter.ttk import Combobox 
-from src.account_manager import AccountManager
-from src.instance import Instance
-from src.data_getter import DataGetter
-from src.answer_generator import AnswerGenerator
-import pprint
-import os
-from dotenv import load_dotenv
-load_dotenv()
+import logging
+from tkinter import *
+from tkinter.ttk import Combobox
+from typing import Dict, List
 
-#mainloop
+from src.AccountManager import AccountManager
+from src.App import App
+from src.Config import AppSettings
+from src.answer_generators.impl.GigaChatAnswerGenerator import GigaChatAnswerGenerator, GigaModels
+
+logging.basicConfig(
+    level=logging.INFO,               # показывать INFO и выше
+    format='[%(asctime)s] %(levelname)s: %(message)s',
+    datefmt='%H:%M:%S'
+)
+
+config = AppSettings.from_yaml_file("config.yaml")
+
+USERS: Dict[str, str] = config.users
+VK_API_TOKEN: str = config.VK_API_TOKEN
+USER_VK_ID: str = config.USER_VK_ID
+GIGACHAT_API_TOKEN: str = config.GIGACHAT_API_TOKEN
+USERS_IDS: List[str] = list(USERS.keys())
+
+ANSWER_GENERATOR = GigaChatAnswerGenerator(
+        GIGACHAT_API_TOKEN,
+        GigaModels.GIGACHAT_2_PRO
+)
+
+ACCOUNT_MANAGER = AccountManager(USERS, VK_API_TOKEN, USER_VK_ID, ANSWER_GENERATOR)
+ACCOUNT_MANAGER.auth()
+
+APP = App(ACCOUNT_MANAGER, USERS_IDS)
+
+COUNTS = [i*50 for i in range(1, 4, 1)]
+
 def main():
-    targets = DataGetter.targets_reader('data/targets.json')
-    names = list(targets.keys())
-
-    counts = [i*1000 for i in range(1, 21, 1)]
-
-    pprint.pp(targets)
-
-    token = os.getenv('VK_API_TOKEN')
-    user_id = os.getenv('USER_VK_ID')
-    print(token)
-
-    am = AccountManager(targets, token, user_id)
-    am.auth()
-
-    gen = AnswerGenerator(random_word_probability = 0.1)
-    am.answer_generator = gen.generate_response
-
-    intce = Instance(am, names, gen)
+    logging.info(f"Загружены цели: {USERS}")
 
     window = Tk()
     window.title("ChatBot for vk.com")
     window.geometry("800x600")
 
-    frame = Frame(
-        window,
-        padx=10,
-        pady=10
-    )
-    frame.pack(expand=True)
+    frame = Frame(window, padx=20, pady=20)
+    frame.pack(expand=True, fill="both")
 
-    cal_btn = Button(
-        frame, 
-        text='Execute',
-        command=intce.start
-    )
-    cal_btn.grid(row=5, column=2)
+    # Метки
+    method_lbl = Label(frame, text="Set current target", font=("Arial", 14))
+    method_lbl.grid(row=0, column=0, sticky="w", pady=5)
 
-    stop_btn = Button(
-        frame, 
-        text='Terminate for this person',
-        command=intce.stop
-    )
-    stop_btn.grid(row=6, column=2)
+    method_lb2 = Label(frame, text="Choose dump size", font=("Arial", 14))
+    method_lb2.grid(row=2, column=0, sticky="w", pady=5)
 
-    stop_all_btn = Button(
-        frame, 
-        text='Terminate for all',
-        command=intce.stop_all
-    )
-    stop_all_btn.grid(row=7, column=2)
-
-    dump_btn = Button(
-        frame, 
-        text='Dialog dump',
-        command=intce.dump_dialog
-    )
-    dump_btn.grid(row=8, column=2)
-
-    load_model_btn = Button(
-        frame, 
-        text='Fit model',
-        command=intce.fit_model
-    )
-    load_model_btn.grid(row=9, column=2)
-
-    pred_mode_btn = Button(
-        frame, 
-        text='Load model',
-        command=intce.load_model
-    )
-    pred_mode_btn.grid(row=10, column=2)
-
-    exit_btn = Button(
-        frame, 
-        text='Exit',
-        command=window.destroy
-    )
-    exit_btn.grid(row=12, column=1)
-
-    method_lbl = Label(
-        frame,
-        text="Set current target"
-    )
-    method_lbl.grid(row=1, column=1)
-
-    method_lb2 = Label(
-        frame,
-        text="Choose dump size"
-    )
-    method_lb2.grid(row=3, column=1)
-
-    combobox = Combobox(frame, values=names, width=30, state="readonly")
-    combobox.grid(row=2, column=1)
+    # Комбобоксы
+    combobox = Combobox(frame, values=USERS_IDS, width=40, state="readonly", font=("Arial", 12))
+    combobox.grid(row=1, column=0, sticky="w", pady=5)
     combobox.set('Available targets')
-    combobox.bind("<<ComboboxSelected>>", intce.selected)
-    intce.combobox = combobox
 
-
-    combobox1 = Combobox(frame, values=counts, width=30, state="readonly")
-    combobox1.grid(row=4, column=1)
+    combobox1 = Combobox(frame, values=COUNTS, width=40, state="readonly", font=("Arial", 12))
+    combobox1.grid(row=3, column=0, sticky="w", pady=5)
     combobox1.set('Available sizes')
-    combobox1.bind("<<ComboboxSelected>>", intce.set_count_of_messages)
-    intce.combobox1 = combobox1
+
+    # Кнопки
+    btn_font = ("Arial", 14)
+    btn_padx = 10
+    btn_pady = 10
+
+    cal_btn = Button(frame, text='Execute', command=APP.start, font=btn_font, padx=btn_padx, pady=btn_pady)
+    cal_btn.grid(row=5, column=0, sticky="ew", pady=5)
+
+    stop_btn = Button(frame, text='Terminate for this person', command=APP.stop, font=btn_font, padx=btn_padx, pady=btn_pady)
+    stop_btn.grid(row=6, column=0, sticky="ew", pady=5)
+
+    stop_all_btn = Button(frame, text='Terminate for all', command=APP.stop_all, font=btn_font, padx=btn_padx, pady=btn_pady)
+    stop_all_btn.grid(row=7, column=0, sticky="ew", pady=5)
+
+    dump_btn = Button(frame, text='Dialog dump', command=APP.dump_dialog, font=btn_font, padx=btn_padx, pady=btn_pady)
+    dump_btn.grid(row=8, column=0, sticky="ew", pady=5)
+
+    exit_btn = Button(frame, text='Exit', command=window.destroy, font=btn_font, padx=btn_padx, pady=btn_pady)
+    exit_btn.grid(row=9, column=0, sticky="ew", pady=5)
+
+    # Привязка колбеков
+    combobox.bind("<<ComboboxSelected>>", APP.selected)
+    combobox1.bind("<<ComboboxSelected>>", APP.set_count_of_messages)
+    APP.bind_comboboxes(combobox, combobox1)
 
     window.mainloop()
 
 if __name__ == '__main__':
     try:
-        asyncio.run(main())
-    except Exception as inst:
-        print(type(inst))
-        print(inst)
+        main()
+    except Exception as e:
+        logging.error(e)
         input('press enter to exit')
