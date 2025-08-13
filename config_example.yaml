@@ -1,0 +1,8 @@
+VK_API_TOKEN: "token"
+USER_VK_ID: "vk_id"
+GIGACHAT_API_TOKEN: "token"
+users:
+  "450911111": "Игорь"
+  "111111466": "Валера"
+  "251111107": "Маша"
+  "100000000": "Зоя"
