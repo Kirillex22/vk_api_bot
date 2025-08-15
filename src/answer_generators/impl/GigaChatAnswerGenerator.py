@@ -1,4 +1,5 @@
 import logging
+from typing import Callable
 
 from langchain_community.chat_models.gigachat import GigaChat
 from langchain_core.prompts import ChatPromptTemplate
@@ -15,7 +16,13 @@ class GigaModels(Enum):
 
 
 class GigaChatAnswerGenerator(BaseAnswerGenerator):
-    def __init__(self, secret: str, model: GigaModels):
+    def __init__(
+            self,
+            secret: str,
+            model: GigaModels,
+            init_dialog_prompt_fabric: Callable[[str], ChatPromptTemplate] = None,
+            continue_dialog_prompt_fabric: Callable[[str], ChatPromptTemplate] = None
+    ):
         self._giga: GigaChat = GigaChat(
             credentials=secret,
             model=model.value,
@@ -23,37 +30,41 @@ class GigaChatAnswerGenerator(BaseAnswerGenerator):
             verify_ssl_certs=False
         )
 
-    def __call__(self, messages: str | None, context: str) -> str:
-        if messages is None:
-            prompt = ChatPromptTemplate.from_messages([
+        self._init_dialog_prompt_fabric = init_dialog_prompt_fabric
+
+        if init_dialog_prompt_fabric is None:
+            def default_init_dialog_prompt_fabric(context: str) -> ChatPromptTemplate:
+                return ChatPromptTemplate.from_messages([
+                    ("system",
+                     f"""Ты - участник диалога. Тебе нужно изучить отрывок старого диалога, представленный ниже, и придумать какой
+                     фразой начать новый диалог с данным человеком, чтобы это звучало естественно и органично вписывалось в тему диалога,
+                     с учетом стиля общения, а также присущей тебе пунктуации и соблюдения норм русского языка. Вот фрагмент диалога.
+                                {context}"""),
+                    ("user", "{message}")
+                ])
+
+            self._init_dialog_prompt_fabric = default_init_dialog_prompt_fabric
+
+        self._continue_dialog_prompt_fabric = continue_dialog_prompt_fabric
+
+        if continue_dialog_prompt_fabric is None:
+            def default_continue_dialog_prompt_fabric(context: str) -> ChatPromptTemplate:
+                return ChatPromptTemplate.from_messages([
                 ("system",
-                 f"""ты — "цель имитации". твоя задача — отвечать на сообщения от собеседника так, как реальный человек в стиле доброй саркастичной переписки. не используй заглавные буквы, не добавляй смайлы, не исправляй ошибки собеседника. отвечай коротко, сухо, иногда едко, минимально.  
-                правила поведения:
-                1. всегда пишешь с маленькой буквы.  
-                2. будь холодной, саркастичной или сухой, не проявляй теплых эмоций.  
-                3. не добавляй смайлы, эмодзи, междометия.  
-                4. реплики должны быть естественными, но краткими.  
-                Здесь представлен диалог, на который тебе нужно опираться, бери из него характерные для собеседника с именем Цель Имитации речевые конструкции либо способы ответов.
-                {context}"""),
-                ("user", "{message}")
-            ])
-        else:
-            prompt = ChatPromptTemplate.from_messages([
-                ("system",
-                 f"""ты — "цель имитации". твоя задача — придумать первое сообщение для переписки. стиль: холодный, сухой, саркастичный, без эмодзи, без заглавных букв, кратко, используй шутки про жизнь на зоне.  
-                    правила поведения:
-                    1. всегда с маленькой буквы.  
-                    2. не используй смайлы, междометия, лишние слова.  
-                    3. реплика должна быть короткой, холодной, с лёгкой саркастической ноткой.  
-                    4. не задавай прямых вопросов, если можно их обойти и показать дистанцию.  
-                    Здесь представлен диалог, на который тебе нужно опираться, бери из него характерные для собеседника с именем Цель Имитации речевые конструкции либо способы ответов.
+                 f"""Ты - участник диалога, который идет прямо сейчас. Тебе нужно изучить ход диалога, представленный ниже, и придумать какой
+                     фразой продолжить диалог с данным человеком, чтобы это звучало естественно и органично вписывалось в тему диалога,
+                     с учетом стиля общения, а также присущей тебе пунктуации и соблюдения норм русского языка. Вот диалог.
                     {context}"""),
                 ("user", "{message}")
             ])
 
-        user_message = f"Нужно ответить на следующие сообщения как Цель Имитации: {messages}" if messages is not None else ""
-        chain = prompt | self._giga
+            self._continue_dialog_prompt_fabric = default_continue_dialog_prompt_fabric
 
-        logging.debug(f'Отправлен промпт: {prompt}...')
+
+
+    def __call__(self, message: str | None, context: str) -> str:
+        prompt = self._continue_dialog_prompt_fabric(context) if message is not None else self._init_dialog_prompt_fabric(message)
+        user_message = f"Собеседник отправил новые сообщения. Верни фразу, которой ответишь: {message}" if message is not None else "Верни фразу, которой начнешь новый диалог."
+        chain = prompt | self._giga
         response: BaseMessage = chain.invoke({"message": user_message})
         return response.content
