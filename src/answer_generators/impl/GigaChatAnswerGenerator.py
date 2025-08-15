@@ -36,8 +36,8 @@ class GigaChatAnswerGenerator(BaseAnswerGenerator):
                 return ChatPromptTemplate.from_messages([
                     ("system",
                      f"""Ты - участник диалога. Тебе нужно изучить отрывок старого диалога, представленный ниже, и придумать какой
-                     фразой начать новый диалог с данным человеком, чтобы это звучало естественно и органично вписывалось в тему диалога,
-                     с учетом стиля общения, а также присущей тебе пунктуации и соблюдения норм русского языка. Вот фрагмент диалога.
+                     фразой начать новый диалог с данным человеком, чтобы это звучало естественно, с учетом стиля общения, 
+                     а также присущей сторонам пунктуации и соблюдения норм русского языка. Вот фрагмент диалога.
                                 {context}"""),
                     ("user", "{message}")
                 ])
@@ -51,8 +51,8 @@ class GigaChatAnswerGenerator(BaseAnswerGenerator):
                 return ChatPromptTemplate.from_messages([
                 ("system",
                  f"""Ты - участник диалога, который идет прямо сейчас. Тебе нужно изучить ход диалога, представленный ниже, и придумать какой
-                     фразой продолжить диалог с данным человеком, чтобы это звучало естественно и органично вписывалось в тему диалога,
-                     с учетом стиля общения, а также присущей тебе пунктуации и соблюдения норм русского языка. Вот диалог.
+                     фразой продолжить диалог с данным человеком, чтобы это звучало естественно, с учетом стиля общения, а также присущей 
+                     сторонам пунктуации и соблюдения норм русского языка. Вот диалог.
                     {context}"""),
                 ("user", "{message}")
             ])
@@ -63,7 +63,7 @@ class GigaChatAnswerGenerator(BaseAnswerGenerator):
 
     def __call__(self, message: str | None, context: str) -> str:
         prompt = self._continue_dialog_prompt_fabric(context) if message is not None else self._init_dialog_prompt_fabric(message)
-        user_message = f"Собеседник отправил новые сообщения. Верни фразу, которой ответишь: {message}" if message is not None else "Верни фразу, которой начнешь новый диалог."
+        user_message = f"Собеседник отправил новые сообщения. Верни фразу, которой ответишь. Не забывай, что тебе нужно быть похожим на TARGET: {message}" if message is not None else "Верни фразу, которой начнешь новый диалог. Не забывай, что тебе нужно быть похожим на TARGET."
         chain = prompt | self._giga
         response: BaseMessage = chain.invoke({"message": user_message})
         return response.content

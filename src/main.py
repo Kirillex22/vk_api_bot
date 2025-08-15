@@ -8,8 +8,8 @@ from src.bot.BotManager import BotManager
 from src.common.Events import EventType
 from src.common.Utils import EventFilters
 from src.answer_generators.impl.GigaChatAnswerGenerator import GigaChatAnswerGenerator, GigaModels
-from src.config.app_settings import AppSettings
-from src.config.setup_logging import setup_logging
+from src.config.App import AppSettings
+from src.config.Logging import setup_logging
 from src.event_receiver.EventReceivingService import EventReceivingService
 from src.event_receiver.pollers.impl.VkApiPoller import VkApiPoller
 from src.tkinter_app.Backend import TkinterApp

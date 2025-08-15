@@ -24,7 +24,7 @@ class TkinterApp:
         if not self._combobox:
             logging.warning("Combobox ещё не инициализирован")
             return
-        self._current_target = self._combobox.get()
+        self._current_target = self._combobox.get().split()[0]
         logging.info(f'Выбран {self._current_target}')
 
     def set_count_of_messages(self, event=None) -> None:

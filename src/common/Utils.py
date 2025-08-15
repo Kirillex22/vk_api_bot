@@ -42,8 +42,8 @@ class DialogCollector:
                 userid: str = str(item.get('from_id'))
                 username: str = self._users.get(userid)
                 if username is None:
-                    username: str = 'Цель имитации.'
-                collected += f"ИМЯ:{username}, ТЕКСТ СООБЩЕНИЯ: {text}\n"
+                    username: str = 'TARGET'
+                collected += f"{username} пишет: {text}\n"
 
         return collected
 
