@@ -12,8 +12,8 @@ from src.config.app_settings import AppSettings
 from src.config.setup_logging import setup_logging
 from src.event_receiver.EventReceivingService import EventReceivingService
 from src.event_receiver.pollers.impl.VkApiPoller import VkApiPoller
-from src.tkinter_app.backend import TkinterApp
-from src.tkinter_app.frontend import start
+from src.tkinter_app.Backend import TkinterApp
+from src.tkinter_app.Frontend import start
 
 setup_logging()
 

@@ -1,4 +1,3 @@
-import logging
 from typing import Callable
 
 from langchain_community.chat_models.gigachat import GigaChat
