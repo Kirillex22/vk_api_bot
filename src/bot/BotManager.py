@@ -25,6 +25,7 @@ class BotStates(StrEnum):
     SENDING_MESSAGE_TO_USER = 'Sending message to user...'
     SETTING_REACTION_ON_MESSAGES = 'Setting reactions on messages...'
     BANNED_FOR_SPAM = 'Banned for spam (waiting penalty time)...'
+    CANCELLED = 'Cancelled...'
 
 
 @dataclass
@@ -144,7 +145,10 @@ class BotManager:
         starting_block = True
         cycles_without_events: int = 0
 
-        initial_context: str = read_initial_context(targetid)
+        try:
+            initial_context: str = read_initial_context(targetid)
+        except FileNotFoundError:
+            self._handlers[targetid][0] = True
 
 
         def calculate_penalty(_context: List[UserActionEvent], scale: float) -> float:
@@ -163,6 +167,7 @@ class BotManager:
 
             stop: bool = self._handlers[targetid][0]
             if stop:
+                self.update_state(targetid, BotStates.CANCELLED)
                 logging.info(f"Остановка обработчика для {targetid}:{self._targets[targetid]}")
                 break
 
@@ -258,6 +263,7 @@ class BotManager:
             if targetid not in self._handlers:
                 continue
             self._handlers[targetid][0] = True
+            self.update_state(targetid, BotStates.CANCELLED)
             logging.info(f'Послан сигнал остановки для {targetid}:{self._targets[targetid]}')
         
 
