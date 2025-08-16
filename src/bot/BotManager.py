@@ -214,15 +214,16 @@ class BotManager:
                 context += batch
                 continue
 
-            for event in batch:
-                self.update_state(targetid, BotStates.SETTING_REACTION_ON_MESSAGES)
-                if not event.from_me:
-                    self.api.send_reaction(
-                        targetid,
-                        event.messageid,
-                        True,
-                        self.reaction_range
-                    )
+            if BotActionMode.REACTION in modes:
+                for event in batch:
+                    self.update_state(targetid, BotStates.SETTING_REACTION_ON_MESSAGES)
+                    if not event.from_me:
+                        self.api.send_reaction(
+                            targetid,
+                            event.messageid,
+                            True,
+                            self.reaction_range
+                        )
 
             text: str = "\n".join([event.message for event in batch if not event.from_me])
 
