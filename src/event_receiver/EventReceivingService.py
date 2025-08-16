@@ -39,7 +39,7 @@ class EventReceivingService:
                     self._containers[concrete_event.userid].put(concrete_event)
 
             except EventFilteringException as e:
-                logging.error(str(e))
+                logging.debug(str(e))
 
             except EventMappingException as e:
-                logging.error(str(e))
+                logging.debug(str(e))

@@ -41,12 +41,12 @@ EVENT_RECEIVER = EventReceivingService(
     VkApiPoller(VK_API_TOKEN)
 )
 
-EVENT_RECEIVING_TASK = threading.Thread(target=EVENT_RECEIVER.__call__, args=())
+EVENT_RECEIVING_TASK = threading.Thread(target=EVENT_RECEIVER.__call__, args=(), daemon=True)
 EVENT_RECEIVING_TASK .start()
 
 APP = TkinterApp(ACCOUNT_MANAGER, USERS_IDS, EVENT_RECEIVER)
 
-COUNTS = [i*50 for i in range(1, 4, 1)]
+COUNTS = [i*50 for i in range(1, 10, 1)]
 
 logging.info(f"Загружены цели: {USERS}")
 

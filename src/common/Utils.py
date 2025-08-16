@@ -26,7 +26,7 @@ class DialogCollector:
             return wall.get('text', "")
         return ""
 
-    def __call__(self, dialog_slice: Dict[str, Any], message_len_limit: int = 100) -> str:
+    def __call__(self, dialog_slice: Dict[str, Any], message_len_limit: int = 1000) -> str:
         """
         Собирает API-Ответ в строку в формате Псевдоним: Cообщение_1\n ... Псевдоним: Cообщение_N
         :param dialog_slice: Срез диалога
@@ -34,7 +34,7 @@ class DialogCollector:
         :return:
         """
         collected: str = ""
-        for item in dialog_slice.get('items', []):
+        for item in reversed(dialog_slice.get('items', [])):
             text: str | None = item.get('text')
             if text is None or len(text) <= 0:
                 text: str = self._get_first_post_text(item)
@@ -42,8 +42,8 @@ class DialogCollector:
                 userid: str = str(item.get('from_id'))
                 username: str = self._users.get(userid)
                 if username is None:
-                    username: str = 'TARGET'
-                collected += f"{username} пишет: {text}\n"
+                    username: str = 'Ты'
+                collected += f"{username}: {text}\n"
 
         return collected
 
@@ -77,14 +77,16 @@ class GeneratorLock:
 def read_initial_context(targetid: str) -> str:
     path_to_context = f"{PROJECT_ROOT}\\dialogs_dumps\\{targetid}.dump"
     with open(path_to_context, encoding="utf-8") as f:
-        return f.read()
+        context: str = f.read()
+        logging.info(f"Загружен контекст длиной {len(context.split('\n'))}")
+        return context
 
 
 def make_str_from_context(_context: List[UserActionEvent], username: str) -> str:
     result = ""
     for new_mes_event in _context:
         if new_mes_event.from_me:
-            result += f"Я: {new_mes_event.message}\n"
+            result += f"Ты: {new_mes_event.message}\n"
         else:
             result += f"{username}: {new_mes_event.message}\n"
 

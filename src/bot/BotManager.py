@@ -5,13 +5,16 @@ from dataclasses import dataclass
 import numpy as np
 import logging
 from typing import List, Dict, Any, Tuple
-from queue import Queue, Empty
+from queue import Queue
 
 from src.bot.Mods import BotActionMode, ActivityMode
 from src.bot.VkApiClientWrapper import VkApiClientWrapper
 from src.common.Events import UserActionEvent
 from src.common.Utils import GeneratorLock, make_str_from_context, read_initial_context, typing_time
 from src.answer_generators.core import BaseAnswerGenerator
+
+
+WAIT_CYCLES_WITHOUT_EVENTS = 10
 
 
 @dataclass
@@ -31,7 +34,7 @@ class BotManager:
             token: str,
             vk_id: str,
             answer_generator: BaseAnswerGenerator,
-            reaction_probability: float = 0.4
+            reaction_probability: float = 0.8
     ):
         self._targets: Dict[str, str] = targets
         self.api = VkApiClientWrapper(token, self._targets)
@@ -48,8 +51,14 @@ class BotManager:
             self.reaction_range = np.arange(0, int(1/reaction_probability), 1)
 
 
-    def _wait_and_get_answer_from_generator(self, targetid: str, text: str | None, context: str) -> str | None:
+    def _wait_and_get_answer_from_generator(
+        self,
+        targetid: str,
+        text: str | None,
+        context: str
+    ) -> str | None:
         logging.info(f"Заблокирован ли генератор: {self._generator_lock}")
+
         while self._generator_lock:
             logging.info("Поток ожидает освобождения генератора ответов...")
             time.sleep(0.5)
@@ -65,12 +74,11 @@ class BotManager:
             return None
 
     def _send_message(
-            self,
-            targetid: str,
-            response: str,
-            min_char_sec_typing: int,
-            max_chars_sec_typing: int,
-            delay_between_answers_seconds: int
+        self,
+        targetid: str,
+        response: str,
+        min_char_sec_typing: int,
+        max_chars_sec_typing: int
     ) -> None:
 
         time.sleep(typing_time(response, min_char_sec_typing, max_chars_sec_typing))
@@ -78,8 +86,6 @@ class BotManager:
         logging.info(f"Отправляем сообщение...")
         self.api.send_message(targetid, response)
         logging.info(f'Отправлено сообщение {response} пользователю {targetid}:{self._targets[targetid]}')
-
-        time.sleep(delay_between_answers_seconds)
 
     def _start_conversation(self, cfg: HandlerConfig, queue: Queue[UserActionEvent]) -> None:
         targetid: str = cfg.targetid
@@ -90,7 +96,11 @@ class BotManager:
         delay_between_answers_seconds: int = cfg.delay_between_answers_seconds
 
         context: List[UserActionEvent] = []
+        starting_block = True
+        cycles_without_events: int = 0
+
         initial_context: str = read_initial_context(targetid)
+
 
         def calculate_penalty(_context: List[UserActionEvent], scale: float) -> float:
             _penalty: float = 0.0
@@ -109,13 +119,25 @@ class BotManager:
                 logging.info(f"Остановка обработчика для {targetid}:{self._targets[targetid]}")
                 break
 
-            try:
-                event: UserActionEvent = queue.get(timeout=3)
-            except Empty:
-                if BotActionMode.DIALOG in modes:
+            batch: List[UserActionEvent] = []
+
+            time.sleep(delay_between_answers_seconds)
+
+            while not queue.empty():
+                event: UserActionEvent = queue.get_nowait()
+                batch.append(event)
+
+            if len(batch) <= 0:
+                cycles_without_events += 1
+
+                if cycles_without_events >= WAIT_CYCLES_WITHOUT_EVENTS:
+                    starting_block = False
+
+                if BotActionMode.DIALOG in modes and not starting_block:
                     penalty: float = calculate_penalty(context, penalty_scale)
                     logging.info(f"Штраф {penalty} секунд для {targetid}:{self._targets[targetid]} за спам.")
                     time.sleep(penalty)
+                    starting_block = True
 
                     response: str = self._wait_and_get_answer_from_generator(
                         targetid,
@@ -123,16 +145,33 @@ class BotManager:
                         make_str_from_context(context, self._targets[targetid]) if len(context) > 0 else initial_context,
                     )
 
-                    self._send_message(targetid, response, min_chars_sec_typing, max_chars_sec_typing, delay_between_answers_seconds)
+                    self._send_message(
+                        targetid,
+                        response,
+                        min_chars_sec_typing,
+                        max_chars_sec_typing
+                    )
+
                 continue
 
-            if event.from_me:
-                context.append(event)
-                continue
-            else:
-                self.api.send_reaction(targetid, event.messageid)
+            if cycles_without_events > 0:
+                cycles_without_events -= 1
 
-            text: str = event.message
+            if all(event.from_me for event in batch):
+                context += batch
+                continue
+
+            for event in batch:
+                if not event.from_me:
+                    self.api.send_reaction(
+                        targetid,
+                        event.messageid,
+                        True,
+                        self.reaction_range
+                    )
+
+            text: str = "\n".join([event.message for event in batch if not event.from_me])
+
             logging.info(f"Проверка пакета сообщений длины {len(text)} от {targetid}")
 
             if BotActionMode.DIALOG in modes:
@@ -147,16 +186,21 @@ class BotManager:
                     )
                 )
 
-                self._send_message(targetid, response, min_chars_sec_typing, max_chars_sec_typing, delay_between_answers_seconds)
+                self._send_message(
+                    targetid,
+                    response,
+                    min_chars_sec_typing,
+                    max_chars_sec_typing
+                )
 
-            context.append(event)
+            context += batch
 
         del self._handlers[targetid]
         logging.info(f"Обработчик для {targetid}:{self._targets[targetid]} успешно удален.")
 
     def create_target_handler(self, cfg: HandlerConfig) -> Queue[UserActionEvent]:
         queue = Queue()
-        thread = threading.Thread(target=self._start_conversation, args=(cfg,queue,))
+        thread = threading.Thread(target=self._start_conversation, args=(cfg,queue,),  daemon=True)
         self._handlers[cfg.targetid] = [False, thread]
         thread.start()
         logging.info(f'Добавлен и запущен обработчик для {cfg.targetid}:{self._targets[cfg.targetid]}')

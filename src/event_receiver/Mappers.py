@@ -24,6 +24,6 @@ def map_raw_event_to_abstract_event(raw_event: Dict[str, Any]) -> AbstractEvent:
 
 def map_abstract_event_to_concrete_event(event: AbstractEvent) -> UserActionEvent:
     if event.type_ == EventType.MESSAGE_NEW:
-        return NewMessageEvent(event.attrs.get('from_me'), event.userid, event.attrs.get('text'), event.attrs.get("message_id"))
+        return NewMessageEvent(event.attrs.get('from_me'), event.userid, event.attrs.get('text'), event.attrs.get("info"))
     else:
         raise EventMappingException('Неверный тип события.')

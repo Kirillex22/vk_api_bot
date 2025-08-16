@@ -1,3 +1,4 @@
+import sys
 from tkinter import Tk, Frame, Label, Button, StringVar, IntVar, Checkbutton, Entry
 from tkinter.ttk import Combobox
 from typing import Dict, List
