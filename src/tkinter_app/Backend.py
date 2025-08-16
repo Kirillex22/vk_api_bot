@@ -16,6 +16,10 @@ class TkinterApp:
         self._combobox: Combobox | None = None
         self._combobox1: Combobox | None = None
 
+    @property
+    def handlers_states(self):
+        return self._am.handlers_states
+
     def bind_comboboxes(self, combobox: Combobox, combobox1: Combobox) -> None:
         self._combobox = combobox
         self._combobox1 = combobox1

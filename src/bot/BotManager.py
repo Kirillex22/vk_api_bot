@@ -1,6 +1,7 @@
 import time
 import threading
 from dataclasses import dataclass
+from enum import StrEnum
 
 import numpy as np
 import logging
@@ -15,6 +16,15 @@ from src.answer_generators.core import BaseAnswerGenerator
 
 
 WAIT_CYCLES_WITHOUT_EVENTS = 10
+
+
+class BotStates(StrEnum):
+    WAITING_FOR_EVENTS = 'Waiting for events...'
+    ANSWERING_USER_MESSAGE = 'Answering user message...'
+    IMITATING_TYPING = 'Imitating typing...'
+    SENDING_MESSAGE_TO_USER = 'Sending message to user...'
+    SETTING_REACTION_ON_MESSAGES = 'Setting reactions on messages...'
+    BANNED_FOR_SPAM = 'Banned for spam (waiting penalty time)...'
 
 
 @dataclass
@@ -50,6 +60,35 @@ class BotManager:
         else: 
             self.reaction_range = np.arange(0, int(1/reaction_probability), 1)
 
+    def update_state(self, targetid: str, state: str) -> None:
+        self._handlers[targetid][2] = state
+
+    @property
+    def handlers_states(self) -> List[Dict[str, str | bool]]:
+        result: List[Dict[str, str | bool]] = []
+
+        for targetid in self._targets:
+            if targetid not in self._handlers:
+                result.append(
+                    {
+                        'id': targetid,
+                        'name':self._targets[targetid],
+                        'running': False,
+                        'current_state': 'No state'
+                    }
+                )
+
+            else:
+                result.append(
+                    {
+                        'id': targetid,
+                        'name':self._targets[targetid],
+                        'running': not self._handlers[targetid][0],
+                        'current_state': self._handlers[targetid][2]
+                    }
+                )
+
+        return result
 
     def _wait_and_get_answer_from_generator(
         self,
@@ -58,6 +97,8 @@ class BotManager:
         context: str
     ) -> str | None:
         logging.info(f"Заблокирован ли генератор: {self._generator_lock}")
+
+        self.update_state(targetid, BotStates.ANSWERING_USER_MESSAGE)
 
         while self._generator_lock:
             logging.info("Поток ожидает освобождения генератора ответов...")
@@ -80,8 +121,12 @@ class BotManager:
         min_char_sec_typing: int,
         max_chars_sec_typing: int
     ) -> None:
+        self.update_state(targetid, BotStates.IMITATING_TYPING)
 
+        self.api.set_activity(targetid, False, ActivityMode.TYPING)
         time.sleep(typing_time(response, min_char_sec_typing, max_chars_sec_typing))
+
+        self.update_state(targetid, BotStates.SENDING_MESSAGE_TO_USER)
 
         logging.info(f"Отправляем сообщение...")
         self.api.send_message(targetid, response)
@@ -114,6 +159,8 @@ class BotManager:
             return _penalty*scale
 
         while True:
+            self.update_state(targetid, BotStates.WAITING_FOR_EVENTS)
+
             stop: bool = self._handlers[targetid][0]
             if stop:
                 logging.info(f"Остановка обработчика для {targetid}:{self._targets[targetid]}")
@@ -136,6 +183,7 @@ class BotManager:
                 if BotActionMode.DIALOG in modes and not starting_block:
                     penalty: float = calculate_penalty(context, penalty_scale)
                     logging.info(f"Штраф {penalty} секунд для {targetid}:{self._targets[targetid]} за спам.")
+                    self.update_state(targetid, BotStates.BANNED_FOR_SPAM)
                     time.sleep(penalty)
                     starting_block = True
 
@@ -162,6 +210,7 @@ class BotManager:
                 continue
 
             for event in batch:
+                self.update_state(targetid, BotStates.SETTING_REACTION_ON_MESSAGES)
                 if not event.from_me:
                     self.api.send_reaction(
                         targetid,
@@ -175,8 +224,6 @@ class BotManager:
             logging.info(f"Проверка пакета сообщений длины {len(text)} от {targetid}")
 
             if BotActionMode.DIALOG in modes:
-                self.api.set_activity(targetid, _random=False, activity=ActivityMode.TYPING)
-
                 response: str = self._wait_and_get_answer_from_generator(
                     targetid,
                     text,
@@ -201,7 +248,7 @@ class BotManager:
     def create_target_handler(self, cfg: HandlerConfig) -> Queue[UserActionEvent]:
         queue = Queue()
         thread = threading.Thread(target=self._start_conversation, args=(cfg,queue,),  daemon=True)
-        self._handlers[cfg.targetid] = [False, thread]
+        self._handlers[cfg.targetid] = [False, thread, 'Waiting for events...']
         thread.start()
         logging.info(f'Добавлен и запущен обработчик для {cfg.targetid}:{self._targets[cfg.targetid]}')
         return queue
