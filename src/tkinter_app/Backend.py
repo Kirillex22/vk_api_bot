@@ -1,7 +1,9 @@
 import logging
 from tkinter.ttk import Combobox
+from typing import Dict
 
 from src.bot.BotManager import BotManager, HandlerConfig
+from src.common.Utils import dump_dialog_from_telegram
 from src.event_receiver.EventReceivingService import EventReceivingService
 
 
@@ -56,3 +58,10 @@ class TkinterApp:
             logging.warning("Не выбран целевой пользователь!")
             return
         self._am.api.dump_dialog(self._current_target, self._count_of_messages)
+
+    def dump_dialog_from_tg(self, path_to_tg_dump: str, name_mapping: Dict[str, str] = None) -> None:
+        if not self._current_target:
+            logging.warning("Не выбран целевой пользователь!")
+            return
+
+        dump_dialog_from_telegram(self._current_target, path_to_tg_dump, name_mapping)

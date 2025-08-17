@@ -31,7 +31,6 @@ ANSWER_GENERATOR = GigaChatAnswerGenerator(
 )
 
 ACCOUNT_MANAGER = BotManager(USERS, VK_API_TOKEN, USER_VK_ID, ANSWER_GENERATOR)
-
 EVENT_RECEIVER = EventReceivingService(
     EventFilters(
         [EventType.MESSAGE_NEW],

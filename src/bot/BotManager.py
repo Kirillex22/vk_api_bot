@@ -195,7 +195,7 @@ class BotManager:
                     response: str = self._wait_and_get_answer_from_generator(
                         targetid,
                         None,
-                        make_str_from_context(context, self._targets[targetid]) if len(context) > 0 else initial_context,
+                        initial_context + make_str_from_context(context, self._targets[targetid]),
                     )
 
                     self._send_message(
@@ -233,7 +233,7 @@ class BotManager:
                 response: str = self._wait_and_get_answer_from_generator(
                     targetid,
                     text,
-                    make_str_from_context(
+                    initial_context + make_str_from_context(
                         context,
                         self._targets[targetid]
                     )

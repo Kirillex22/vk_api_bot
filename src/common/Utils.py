@@ -1,7 +1,8 @@
 import logging
 import random
+import json
 import numpy as np
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Set
 from dataclasses import dataclass
 
 from src.common import PROJECT_ROOT
@@ -121,3 +122,47 @@ def typing_time(message: str, min_speed: int, max_speed: int) -> float:
     time_seconds = length / speed
 
     return round(time_seconds, 2)
+
+
+def dump_dialog_from_telegram(targetid: str, path_to_tg_dump: str, name_mapping: Dict[str, str] = None) -> None:
+    with open(path_to_tg_dump, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    with open(f'{PROJECT_ROOT}\\dialogs_dumps\\{targetid}.dump', "w", encoding="utf-8") as f:
+        for msg in data.get("messages", []):
+            sender = msg.get("from")
+            text = msg.get("text", "")
+            if isinstance(text, list):  # иногда text приходит как список
+                text = "".join(
+                    part if isinstance(part, str) else part.get("text", "")
+                    for part in text
+                )
+            text = str(text).replace("\n", " ").strip()
+            if sender and text:
+                if name_mapping is not None:
+                    sender = name_mapping[sender]
+                f.write(f"{sender}: {text}\n")
+
+
+def get_names_from_tg_dump(path: str) -> Set[str]:
+    """
+    Выбирает уникальные имена отправителей из Telegram JSON dump.
+    """
+    names: Set[str] = set()
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception as e:
+        logging.exception("Не удалось прочитать JSON дамп Telegram: %s", e)
+        return names
+
+    for msg in data.get("messages", []):
+        sender = msg.get("from")
+        if isinstance(sender, str) and sender.strip():
+            names.add(sender.strip())
+        # иногда бывают service-сообщения с "actor"
+        actor = msg.get("actor")
+        if isinstance(actor, str) and actor.strip():
+            names.add(actor.strip())
+
+    return names
