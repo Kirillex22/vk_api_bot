@@ -6,7 +6,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import BaseMessage
 from enum import Enum
 
-from src.answer_generators.core.BaseAnswerGenerator import BaseAnswerGenerator
+from src.answer_generators.core.AbstractAnswerGenerator import AbstractAnswerGenerator
 
 
 class GigaModels(Enum):
@@ -15,7 +15,7 @@ class GigaModels(Enum):
     GIGACHAT_2_MAX = 'GigaChat-2-Max'
 
 
-class GigaChatAnswerGenerator(BaseAnswerGenerator):
+class GigaChatAnswerGenerator(AbstractAnswerGenerator):
     def __init__(
             self,
             secret: str,

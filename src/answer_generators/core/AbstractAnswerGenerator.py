@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-class BaseAnswerGenerator(ABC):
+class AbstractAnswerGenerator(ABC):
     """
     Базовый класс генератора ответов
     """

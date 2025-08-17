@@ -6,10 +6,11 @@ import numpy as np
 from vk_api import VkApi
 
 from src.bot.Mods import ActivityMode, ACTIVITIES
+from src.bot.vk_api_wrappers.core.AbstractVkApiWrapper import AbstractVkApiWrapper
 from src.common.Utils import DialogCollector, random_value_gen
 
 
-class VkApiClientWrapper:
+class VkApiWrapper(AbstractVkApiWrapper):
     def __init__(self, token: str, targets: Dict[str, str]):
         self._api = VkApi(token=token).get_api()
         self._targets: Dict[str, str] = targets

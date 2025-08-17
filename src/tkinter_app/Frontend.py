@@ -201,7 +201,7 @@ def start(app: TkinterApp, targets: Dict[str, str], counts: List[int]) -> None:
     Button(left_frame, text='▶ Execute',
            command=lambda: app.start(
                HandlerConfig(
-                   targetid=target_var.get().split()[-1],
+                   targetid=target_var.get().split()[0],
                    delay_between_answers_seconds=delay_var.get(),
                    mode=[mode for m, mode in [
                        (mode_dialog_var.get(), BotActionMode.DIALOG),

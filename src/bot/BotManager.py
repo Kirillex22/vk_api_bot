@@ -9,10 +9,10 @@ from typing import List, Dict, Any, Tuple
 from queue import Queue
 
 from src.bot.Mods import BotActionMode, ActivityMode
-from src.bot.VkApiClientWrapper import VkApiClientWrapper
+from src.bot.vk_api_wrappers.core.AbstractVkApiWrapper import AbstractVkApiWrapper
 from src.common.Events import UserActionEvent
 from src.common.Utils import GeneratorLock, make_str_from_context, read_initial_context, typing_time
-from src.answer_generators.core import BaseAnswerGenerator
+from src.answer_generators.core import AbstractAnswerGenerator
 
 
 WAIT_CYCLES_WITHOUT_EVENTS = 10
@@ -42,18 +42,18 @@ class BotManager:
     def __init__(
             self,
             targets: Dict[str, str],
-            token: str,
             vk_id: str,
-            answer_generator: BaseAnswerGenerator,
+            answer_generator: AbstractAnswerGenerator,
+            api: AbstractVkApiWrapper,
             reaction_probability: float = 0.8
     ):
         self._targets: Dict[str, str] = targets
-        self.api = VkApiClientWrapper(token, self._targets)
+        self.api = api
         self._vk_id: str = vk_id
         self._path_to_out = None
         self._handlers: Dict[str, List[bool | Any]] = {}
         self._reaction_probability = reaction_probability
-        self._answer_generator: BaseAnswerGenerator = answer_generator
+        self._answer_generator: AbstractAnswerGenerator = answer_generator
         self._generator_lock: bool = False
 
         if reaction_probability <= 0: 

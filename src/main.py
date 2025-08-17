@@ -5,6 +5,7 @@ from typing import Dict, List
 
 from src import PROJECT_ROOT
 from src.bot.BotManager import BotManager
+from src.bot.vk_api_wrappers.impl.VkApiWrapper import VkApiWrapper
 from src.common.Events import EventType
 from src.common.Utils import EventFilters
 from src.answer_generators.impl.GigaChatAnswerGenerator import GigaChatAnswerGenerator, GigaModels
@@ -30,7 +31,8 @@ ANSWER_GENERATOR = GigaChatAnswerGenerator(
         GigaModels.GIGACHAT_2_PRO
 )
 
-ACCOUNT_MANAGER = BotManager(USERS, VK_API_TOKEN, USER_VK_ID, ANSWER_GENERATOR)
+VK_API_WRAPPER = VkApiWrapper(VK_API_TOKEN, USERS)
+ACCOUNT_MANAGER = BotManager(USERS, USER_VK_ID, ANSWER_GENERATOR, VK_API_WRAPPER, 0.5)
 EVENT_RECEIVER = EventReceivingService(
     EventFilters(
         [EventType.MESSAGE_NEW],
