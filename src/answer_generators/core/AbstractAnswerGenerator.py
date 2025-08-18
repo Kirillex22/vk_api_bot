@@ -5,7 +5,7 @@ class AbstractAnswerGenerator(ABC):
     Базовый класс генератора ответов
     """
     @abstractmethod
-    def __call__(self, message: str, context: str) -> str:
+    def __call__(self, message: str | None, context: str, rules: str) -> str:
         """
         :param message: Сообщения собеседника
         :param context: Размеченный контекст (диалог)
