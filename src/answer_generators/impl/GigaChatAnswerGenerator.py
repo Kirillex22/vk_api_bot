@@ -18,8 +18,8 @@ class GigaModels(Enum):
 def init_dialog_prompt_fabric(context: str, rules: str) -> ChatPromptTemplate:
     return ChatPromptTemplate.from_messages([
         ("system",
-         f"""Ты - участник диалога. Тебе нужно изучить отрывок старого диалога, представленный ниже, и придумать какой
-          фразой начать новый диалог с данным человеком, либо, если есть возможность, как продолжить данный. 
+         f"""Ты - участник диалога. Тебе нужно изучить диалог, представленный ниже, и придумать какой
+          фразой начать новый диалог с данным человеком, либо как продолжить данный. Желательно всегда стараться продолжать диалог.
           Правила:
           Основное правило - имитировать письменную речь и ход мыслей собеседника, которым ты являешься, если это не противоречит правилам ниже: 
           {rules}
@@ -55,7 +55,7 @@ class GigaChatAnswerGenerator(AbstractAnswerGenerator):
 
     def __call__(self, message: str | None, context: str, rules: str) -> str:
         prompt = continue_dialog_prompt_fabric(context, rules) if message is not None else init_dialog_prompt_fabric(context, rules)
-        user_message = f"Собеседник отправил новые сообщения. Ответь ему. Не забывай, что тебе нужно быть похожим на TARGET: {message}" if message is not None else "Начни диалог. Не забывай, что тебе нужно быть похожим на TARGET."
+        user_message = f"Собеседник отправил новые сообщения. Ответь ему.: {message}" if message is not None else "Начни диалог."
         chain = prompt | self._giga
         logging.info(f"промпт: {prompt}")
         response: BaseMessage = chain.invoke({"message": user_message})

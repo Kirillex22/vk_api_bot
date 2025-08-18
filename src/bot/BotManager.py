@@ -178,11 +178,15 @@ class BotManager:
 
                 batch: List[UserActionEvent] = []
 
-                time.sleep(delay_between_answers_seconds)
+                for _ in range(delay_between_answers_seconds - 1):
+                    time.sleep(1)
 
-                while not queue.empty():
-                    event: UserActionEvent = queue.get_nowait()
-                    batch.append(event)
+                    while not queue.empty():
+                        event: UserActionEvent = queue.get_nowait()
+                        batch.append(event)
+
+                    if len(batch) > 3:
+                        break
 
                 if len(batch) <= 0:
                     cycles_without_events += 1
@@ -223,7 +227,7 @@ class BotManager:
                 if BotActionMode.REACTION in modes:
                     for event in batch:
                         self.update_state(targetid, BotStates.SETTING_REACTION_ON_MESSAGES)
-                        if not event.from_me:
+                        if not event.from_me and event.messageid is not None:
                             self.api.send_reaction(
                                 targetid,
                                 event.messageid,

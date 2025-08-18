@@ -30,7 +30,6 @@ class EventReceivingService:
         for response in self._poller.listen():
             try:
                 raw_event: Dict[str, Any] = vars(response)
-
                 abstract_event: AbstractEvent = map_raw_event_to_abstract_event(raw_event)
                 filtered: AbstractEvent= self._filters.apply(abstract_event)
                 concrete_event: UserActionEvent = map_abstract_event_to_concrete_event(filtered)
