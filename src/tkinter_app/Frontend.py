@@ -208,8 +208,9 @@ def start(app: TkinterApp, targets: Dict[str, str], counts: List[int]) -> None:
     Checkbutton(left_frame, text="REACTION", variable=mode_reaction_var, font=("Segoe UI", 12), bg="#f4f6f8").grid(row=8, column=1, sticky="w")
 
     # ------------------ Поле для правил ------------------
-    Label(left_frame, text="Правила ведения диалога (построчно):", font=("Segoe UI", 12), bg="#f4f6f8").grid(row=9, column=0, sticky="nw",
-                                                                               pady=(10, 5))
+    Label(left_frame, text="Правила ведения диалога (построчно):", font=("Segoe UI", 12), bg="#f4f6f8").grid(
+        row=9, column=0, sticky="nw", pady=(10, 5)
+    )
 
     rules_frame = Frame(left_frame, bg="#f4f6f8")
     rules_frame.grid(row=9, column=1, pady=(10, 5), sticky="nsew")
@@ -231,6 +232,26 @@ def start(app: TkinterApp, targets: Dict[str, str], counts: List[int]) -> None:
     rules_text.pack(fill="both", expand=True)
 
     rules_scroll.config(command=rules_text.yview)
+
+    # Кнопка загрузки правил из файла
+    def load_rules_from_file():
+        file_path = filedialog.askopenfilename(
+            title="Выберите файл с правилами",
+            filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
+        )
+        if not file_path:
+            return
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            rules_text.delete("1.0", "end")
+            rules_text.insert("1.0", content)
+        except Exception as e:
+            print(f"Ошибка загрузки файла правил: {e}")
+
+    Button(rules_frame, text="📂 Загрузить из файла",
+           command=load_rules_from_file,
+           bg="#009688", fg="white", font=("Segoe UI", 10)).pack(fill="x", pady=(4, 0))
 
     # ------------------ Кнопки ------------------
     button_pad_y = 6

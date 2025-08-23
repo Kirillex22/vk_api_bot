@@ -2,7 +2,6 @@ import logging
 from queue import Queue
 from typing import Dict, Any
 
-
 from src.common.Events import UserActionEvent, AbstractEvent
 from src.event_receiver.Exceptions import EventFilteringException, EventMappingException
 from src.event_receiver.Mappers import map_raw_event_to_abstract_event, map_abstract_event_to_concrete_event

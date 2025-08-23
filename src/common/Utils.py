@@ -80,7 +80,7 @@ def read_initial_context(targetid: str) -> str:
     with open(path_to_context, encoding="utf-8") as f:
         context: str = f.read()
         logging.info(f"Загружен контекст длиной {len(context.split('\n'))}")
-        return context
+        return context.replace("{", "{{").replace("}", "}}")
 
 
 def make_str_from_context(_context: List[UserActionEvent], username: str) -> str:

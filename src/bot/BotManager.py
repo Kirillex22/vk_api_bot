@@ -15,7 +15,7 @@ from src.common.Utils import GeneratorLock, make_str_from_context, read_initial_
 from src.answer_generators.core import AbstractAnswerGenerator
 
 
-WAIT_CYCLES_WITHOUT_EVENTS = 10
+WAIT_CYCLES_WITHOUT_EVENTS = 100
 
 
 class BotStates(StrEnum):
@@ -150,7 +150,8 @@ class BotManager:
         cycles_without_events: int = 0
 
         try:
-            initial_context: str = read_initial_context(targetid).replace("{", "{{").replace("}", "}}")
+            initial_context: str = read_initial_context(targetid)
+            logging.info(cfg.rules)
         except FileNotFoundError:
             self._handlers[targetid][0] = True
 
@@ -184,9 +185,6 @@ class BotManager:
                     while not queue.empty():
                         event: UserActionEvent = queue.get_nowait()
                         batch.append(event)
-
-                    if len(batch) > 3:
-                        break
 
                 if len(batch) <= 0:
                     cycles_without_events += 1
